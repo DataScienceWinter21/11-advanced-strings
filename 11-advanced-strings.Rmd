@@ -1,0 +1,188 @@
+---
+title: "Advanced text mining"
+author: "Bastola"
+date: "`r format(Sys.Date(), ' %B %d %Y')`"
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, 
+                      collapse = TRUE, 
+                      comment=NA, 
+                      warning = FALSE,
+                      message = FALSE,
+                      fig.height = 4, fig.width = 6, fig.align='center')
+
+library(tidyverse) 
+library(stringr)
+library(tidytext)
+```
+
+
+## Your turn 1
+
+```{r}
+x <- "My SSN is 593-29-9502 and my age is 55"
+y <- "My phone number is 612-643-1539"
+z <- "My old SSN number is 39532 9423."
+out <- str_flatten(c(x,y,z), collapse = ". ")
+out
+```
+
+### a. What characters in `x` will `str_view_all(x, "-..-")` find?
+
+*answer:*
+
+The pattern: "-" then "something" then "something" then "-"
+
+```{r}
+
+```
+
+### b. What pattern will `str_view_all(x, "-\\d{2}-")` find?
+
+```{r}
+
+```
+
+### c. What pattern will `str_view_all(x, "\\d{2}\\.*")` find?
+
+
+```{r}
+
+```
+
+
+### d. Use `str_view_all` to determine the correct regex pattern to identify all SSN in `out`
+
+We can get the SSN with the usual format (###-##-####) with a regex that has 3, 2, and 4 digits separated by a dash. 
+
+```{r}
+str_view_all(out,"([0-8]\\d{2})-(\\d{2})-(\\d{4})")
+```
+
+This misses the oddly formatted SSN in the third entry. Rather than use a dash, we can specify the divider as `[-\\s]?` which allows either 0 or 1 occurrences of either a dash or space divider:
+
+```{r }
+str_view_all(out,"([0-8]\\d{2})_____(\\d{2})_____(\\d{4})")
+```
+
+
+Your turn 2
+
+### Let's deal with a number string that is longer than 9 digits.
+
+```{r }
+ssn <- "([0-8]\\d{2})[-\\s]?(\\d{2})[-\\s]?(\\d{4})"
+test <- c("123-45-67890","1123 45 6789")
+str_view_all(test, ssn)
+```
+
+It captures a 9 digit string as a SSN when in fact these strings are longer than 9 digits and may not actually represent SSN. One way to deal with this is to use the *negative lookbehind* `?<!` and *ahead* `?!` operator to verify that the identified string of 9 digits does not have a leading 0 or does not contain more digits. If we "lookbehind" from the start of the SSN we should not see another digit:
+
+```{r }
+str_view_all(test, "_______([0-8]\\d{2})[-\\.\\s]?(\\d{2})[-\\.\\s]?(\\d{4})")
+```
+And if we "look ahead" from the end of the SSN, we should not see another digit:
+
+```{r}
+str_view_all(test, "(?<!\\d)([0-8]\\d{2})[-\\.\\s]?(\\d{2})[-\\.\\s]?(\\d{4})______")
+```
+
+
+
+## Your turn 3
+
+```{r}
+tweets<- read_csv("https://raw.githubusercontent.com/deepbas/statdatasets/main/TrumpTweetData.csv")
+```
+
+### a. What proportion of tweets (text) mention "America"?
+
+```{r}
+
+
+```
+
+### b. What proportion of these tweets include "great"?
+
+```{r}
+
+
+```
+
+### c. What proportion of the tweets mention `@`?
+
+```{r}
+
+
+```
+
+
+### d. Remove the tweets having mentions `@`.
+
+```{r}
+Mentions <- c("@[^\\s]+")
+
+
+
+```
+
+
+## Your turn 4
+
+### a. What does the following regular expression signify?
+
+```{r}
+reg <- "([^A-Za-z\\d#@']|'(?![A-Za-z\\d#@]))"
+Links <- "https://t.co/[A-Za-z\\d]+"
+```
+
+
+
+### b. Transform `tweets` to a new data tibble called `tweet_words` containing ONLY clean words from the twitter texts. Collapse all the regular expressions in the tweet texts using the following steps:
+
+- `filter` words that do not start with `"`.
+- `replace` all instances of url links
+-  Split the text column into tokens, flattening the table into one-token-per-row.
+- `filter` the `stop_words` and words starting with numbers out
+
+```{r}
+tweet_words <- tweets %>%
+  filter(!______(text, '^"'))  # not starting with "
+```
+
+
+```{r}
+tweet_words <- tweets %>%
+  filter(!______(text, '^"')) %>%   # not starting with "
+  mutate(text = ________(text, Links, ""))  # replace links with ""
+```
+
+```{r}
+tweet_words <- tweets %>%
+  filter(!______(text, '^"')) %>%   # not starting with "
+  mutate(text = __________(text, Links, "")) %>%
+  unnest_tokens(____, _____, token = "regex", pattern = reg)
+```
+
+
+```{r}
+tweet_words <- tweets %>%
+  filter(!______(text, '^"')) %>%   # not starting with "
+  mutate(text = __________(text, Links, "")) %>%
+  unnest_tokens(____, _____, token = "regex", pattern = reg) %>%
+  filter(!____ %in% stop_words$word, ______(word, "[a-z]"))  # don't want any numbers
+  
+```
+
+### c. Find the proportion of the word "America" in this final tibble. Why does this proportion not match with the one you got in 3b?
+
+
+```{r}
+
+```
+
